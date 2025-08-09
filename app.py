@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import feedparser
 import trafilatura
 from sumy.parsers.plaintext import PlaintextParser
@@ -7,24 +7,27 @@ from sumy.summarizers.text_rank import TextRankSummarizer
 
 app = Flask(__name__)
 
-# مصادر RSS
-RSS_FEEDS = [
-    "https://feeds.bbci.co.uk/arabic/rss.xml",
-    "http://feeds.reuters.com/reuters/topNews",
-    "http://feeds.feedburner.com/TechCrunch/",
-    "https://rss.cnn.com/rss/edition.rss"
-]
+# قاموس مصادر RSS
+RSS_FEEDS = {
+    "اليوم السابع - أخبار عامة": "http://www.youm7.com/rss/SectionRss?SectionID=65",
+    "اليوم السابع - عاجل": "http://www.youm7.com/rss/SectionRss?SectionID=319",
+    "اليوم السابع - حوادث": "http://www.youm7.com/rss/SectionRss?SectionID=203",
+    "BBC Arabic": "https://feeds.bbci.co.uk/arabic/rss.xml",
+    "Reuters": "http://feeds.reuters.com/reuters/topNews",
+    "TechCrunch": "http://feeds.feedburner.com/TechCrunch/",
+    "CNN": "https://rss.cnn.com/rss/edition.rss",
+    "Medium Python": "https://medium.com/feed/tag/python"
+}
 
-def fetch_entries():
+def fetch_entries(feed_url):
     entries = []
-    for feed in RSS_FEEDS:
-        d = feedparser.parse(feed)
-        for e in d.entries[:3]:
-            entries.append({
-                "title": e.get("title", ""),
-                "link": e.get("link", ""),
-                "published": e.get("published", "")
-            })
+    d = feedparser.parse(feed_url)
+    for e in d.entries[:]:
+        entries.append({
+            "title": e.get("title", ""),
+            "link": e.get("link", ""),
+            "published": e.get("published", "")
+        })
     return entries
 
 def extract_text(url):
@@ -41,8 +44,14 @@ def summarize(text, count=4):
 
 @app.route("/")
 def home():
+    section_name = request.args.get("section")
+    if not section_name or section_name not in RSS_FEEDS:
+        # عرض الأقسام فقط
+        return render_template("index.html", feeds=RSS_FEEDS, news=None, section_name=None)
+
+    feed_url = RSS_FEEDS[section_name]
     news_list = []
-    entries = fetch_entries()
+    entries = fetch_entries(feed_url)
     for entry in entries:
         text = extract_text(entry['link'])
         if text:
@@ -53,7 +62,9 @@ def home():
                 "published": entry['published'],
                 "bullets": bullets
             })
-    return render_template("index.html", news=news_list)
+
+    return render_template("index.html", feeds=RSS_FEEDS, news=news_list, section_name=section_name)
 
 if __name__ == "__main__":
     app.run(debug=True)
+# Run the app on http://127.0.0.1:5000/

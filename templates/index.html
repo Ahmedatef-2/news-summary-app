@@ -2,21 +2,40 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ملخص الأخبار</title>
+    <title>📰 ملخص الأخبار</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>📰 ملخص الأخبار</h1>
-    {% for item in news %}
-    <div class="card">
-        <h2><a href="{{ item.link }}" target="_blank">{{ item.title }}</a></h2>
-        <p class="date">{{ item.published }}</p>
-        <ul>
-            {% for point in item.bullets %}
-            <li>{{ point }}</li>
-            {% endfor %}
-        </ul>
-    </div>
+
+<h1>📰 ملخص الأخبار</h1>
+
+<!-- قائمة الأقسام -->
+{% if not news %}
+<div class="card">
+    <h2>📌 اختر قسم الأخبار</h2>
+    <ul>
+    {% for name, url in feeds.items() %}
+        <li><a href="/?section={{ name }}">{{ name }}</a></li>
     {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- عرض الأخبار -->
+{% if news %}
+<h2>{{ section_name }}</h2>
+{% for item in news %}
+<div class="card">
+    <h2><a href="{{ item.link }}" target="_blank">{{ item.title }}</a></h2>
+    <p class="date">{{ item.published }}</p>
+    <ul>
+        {% for point in item.bullets %}
+        <li>{{ point }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+{% endif %}
+
 </body>
 </html>
